@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>React 性能瓶颈演示</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
+          'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: #f5f5f5;
+        margin: 0;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .input-container {
+        margin-bottom: 20px;
+      }
+
+      input {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: #4a90e2;
+        box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+      }
+
+      .list-container {
+        height: 400px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+
+      ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      li {
+        padding: 10px 15px;
+        border-bottom: 1px solid #eee;
+      }
+
+      li:last-child {
+        border-bottom: none;
+      }
+
+      li:hover {
+        background-color: #f9f9f9;
+      }
+
+      .performance-info {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #fff8dc;
+        border-radius: 4px;
+        border-left: 4px solid #f0ad4e;
+      }
+
+      .performance-info h3 {
+        margin-top: 0;
+        color: #8a6d3b;
+      }
+
+      .performance-info p {
+        margin-bottom: 0;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect, useMemo } = React
+
+      // 生成大量数据的函数
+      const generateLargeDataSet = (count) => {
+        const data = []
+        for (let i = 0; i < count; i++) {
+          data.push({
+            id: i,
+            text: `项目 ${i}: ${
+              ['苹果', '香蕉', '橙子', '葡萄', '草莓', '西瓜', '芒果', '柠檬'][
+                Math.floor(Math.random() * 8)
+              ]
+            } - ${Math.random().toString(36).substring(2, 10)}`,
+          })
+        }
+        return data
+      }
+
+      function FilterableList() {
+        // 生成 20,000 个对象的数组
+        const [allItems] = useState(() => generateLargeDataSet(20000))
+        const [filterText, setFilterText] = useState('')
+        const [filteredItems, setFilteredItems] = useState(allItems)
+        const [isProcessing, setIsProcessing] = useState(false)
+
+        // 当输入变化时，过滤数据（这里不使用并发特性）
+        const handleInputChange = (e) => {
+          const value = e.target.value
+          setFilterText(value)
+
+          // 标记开始处理
+          setIsProcessing(true)
+
+          // 模拟耗时的过滤操作
+          const startTime = performance.now()
+
+          // 直接过滤大量数据，这会阻塞 UI
+          const filtered = allItems.filter((item) =>
+            item.text.toLowerCase().includes(value.toLowerCase())
+          )
+
+          const endTime = performance.now()
+          console.log(`过滤耗时: ${endTime - startTime} 毫秒`)
+
+          setFilteredItems(filtered)
+          setIsProcessing(false)
+        }
+
+        return (
+          <div className="container">
+            <h1>React 性能瓶颈演示</h1>
+
+            <div className="input-container">
+              <input
+                type="text"
+                value={filterText}
+                onChange={handleInputChange}
+                placeholder="尝试输入文字过滤列表... 注意输入延迟"
+                style={{
+                  borderColor: isProcessing ? '#e74c3c' : '#ddd',
+                  backgroundColor: isProcessing ? '#ffeaea' : 'white',
+                }}
+              />
+              {isProcessing && <div style={{ color: '#e74c3c', marginTop: '5px' }}>处理中...</div>}
+            </div>
+
+            <div className="list-container">
+              <ul>
+                {filteredItems.map((item) => (
+                  <li key={item.id}>{item.text}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="performance-info">
+              <h3>性能问题说明</h3>
+              <p>
+                这个演示展示了在没有并发特性时，处理大量数据会导致的性能问题。
+                当您在输入框中输入文字时，每次按键都会触发整个列表的重新过滤和渲染，
+                由于数据量很大（20,000 项），这个过程会阻塞主线程，导致输入响应明显延迟。
+                在实际应用中，这种体验会让用户感到界面卡顿。
+              </p>
+              <p>
+                <strong>尝试：</strong>快速输入文字，观察输入框的响应延迟和红色边框的出现。
+              </p>
+            </div>
+          </div>
+        )
+      }
+
+      // 渲染应用
+      const root = ReactDOM.createRoot(document.getElementById('root'))
+      root.render(<FilterableList />)
+    </script>
+  </body>
+</html>

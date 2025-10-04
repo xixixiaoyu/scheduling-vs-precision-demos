@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vue 3 性能演示</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
+          'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: #f5f5f5;
+        margin: 0;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .input-container {
+        margin-bottom: 20px;
+      }
+
+      input {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: #42b883;
+        box-shadow: 0 0 0 2px rgba(66, 184, 131, 0.2);
+      }
+
+      .list-container {
+        height: 400px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+
+      ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      li {
+        padding: 10px 15px;
+        border-bottom: 1px solid #eee;
+      }
+
+      li:last-child {
+        border-bottom: none;
+      }
+
+      li:hover {
+        background-color: #f9f9f9;
+      }
+
+      .performance-info {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f0f9ff;
+        border-radius: 4px;
+        border-left: 4px solid #42b883;
+      }
+
+      .performance-info h3 {
+        margin-top: 0;
+        color: #2c5f2d;
+      }
+
+      .performance-info p {
+        margin-bottom: 0;
+        color: #666;
+      }
+
+      .comparison {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f6f9ff;
+        border-radius: 4px;
+        border-left: 4px solid #34495e;
+      }
+
+      .comparison h3 {
+        margin-top: 0;
+        color: #34495e;
+      }
+
+      .comparison p {
+        margin-bottom: 0;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="container">
+        <h1>Vue 3 响应式系统性能演示</h1>
+
+        <div class="input-container">
+          <input
+            v-model="filterText"
+            placeholder="尝试输入文字过滤列表... 注意 Vue 的响应式系统如何保持流畅"
+          />
+          <div v-if="isProcessing" style="color: #42b883; margin-top: 5px">处理中...</div>
+        </div>
+
+        <div class="list-container">
+          <ul>
+            <li v-for="item in filteredItems" :key="item.id">{{ item.text }}</li>
+          </ul>
+        </div>
+
+        <div class="performance-info">
+          <h3>Vue 响应式系统优势</h3>
+          <p>
+            这个演示展示了 Vue 3 的响应式系统和计算属性如何高效地处理大量数据。 Vue
+            的计算属性具有自动缓存和依赖追踪的特性，只有在依赖的数据发生变化时才会重新计算。
+            这种设计使得 Vue 在大多数情况下无需类似 React 的并发特性就能保持良好的性能。
+          </p>
+          <p><strong>尝试：</strong>快速输入文字，注意输入框和列表更新都保持流畅。</p>
+        </div>
+
+        <div class="comparison">
+          <h3>与 React 对比</h3>
+          <p>
+            Vue 的响应式系统在底层已经做了优化，自动处理了更新的优先级和批处理。 而 React
+            需要开发者手动使用 <code>startTransition</code> 等并发特性来优化性能。
+            这体现了两种框架在设计哲学上的差异：Vue 更注重开箱即用的体验，而 React
+            提供了更底层的控制能力。
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      const { createApp, ref, computed, nextTick } = Vue
+
+      // 生成大量数据的函数
+      const generateLargeDataSet = (count) => {
+        const data = []
+        for (let i = 0; i < count; i++) {
+          data.push({
+            id: i,
+            text: `项目 ${i}: ${
+              ['苹果', '香蕉', '橙子', '葡萄', '草莓', '西瓜', '芒果', '柠檬'][
+                Math.floor(Math.random() * 8)
+              ]
+            } - ${Math.random().toString(36).substring(2, 10)}`,
+          })
+        }
+        return data
+      }
+
+      createApp({
+        setup() {
+          // 生成 20,000 个对象的数组
+          const allItems = ref(generateLargeDataSet(20000))
+          const filterText = ref('')
+          const isProcessing = ref(false)
+
+          // 使用计算属性来派生过滤后的列表
+          // Vue 的计算属性会自动缓存结果，只有当 filterText 变化时才重新计算
+          const filteredItems = computed(() => {
+            // 标记开始处理
+            isProcessing.value = true
+
+            const startTime = performance.now()
+
+            // 过滤大量数据
+            const filtered = allItems.value.filter((item) =>
+              item.text.toLowerCase().includes(filterText.value.toLowerCase())
+            )
+
+            const endTime = performance.now()
+            console.log(`过滤耗时: ${endTime - startTime} 毫秒`)
+
+            // 使用 nextTick 确保 DOM 更新后再重置处理状态
+            nextTick(() => {
+              isProcessing.value = false
+            })
+
+            return filtered
+          })
+
+          return {
+            filterText,
+            filteredItems,
+            isProcessing,
+          }
+        },
+      }).mount('#app')
+    </script>
+  </body>
+</html>
