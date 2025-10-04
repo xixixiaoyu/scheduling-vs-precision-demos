@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vue 3 组件精确更新演示</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
+          'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: #f5f5f5;
+        margin: 0;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .counter-section {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .count-display {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 15px;
+        color: #2c3e50;
+      }
+
+      button {
+        background-color: #42b883;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      button:hover {
+        background-color: #369870;
+      }
+
+      .children-container {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+      }
+
+      .child {
+        width: 30%;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        color: white;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+      }
+
+      .child h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
+      }
+
+      .child p {
+        margin: 0;
+        font-size: 14px;
+      }
+
+      .info-section {
+        margin-top: 30px;
+        padding: 15px;
+        background-color: #f0f9ff;
+        border-radius: 4px;
+        border-left: 4px solid #42b883;
+      }
+
+      .info-section h3 {
+        margin-top: 0;
+        color: #2c5f2d;
+      }
+
+      .info-section p {
+        margin-bottom: 0;
+        color: #666;
+      }
+
+      .instructions {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f6f9ff;
+        border-radius: 4px;
+        border-left: 4px solid #34495e;
+      }
+
+      .instructions h3 {
+        margin-top: 0;
+        color: #34495e;
+      }
+
+      .instructions p {
+        margin-bottom: 10px;
+        color: #666;
+      }
+
+      .instructions ul {
+        margin-top: 0;
+        margin-bottom: 0;
+        padding-left: 20px;
+      }
+
+      .instructions li {
+        margin-bottom: 5px;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="container">
+        <h1>Vue 3 组件精确更新演示</h1>
+
+        <div class="counter-section">
+          <div class="count-display">计数: {{ count }}</div>
+          <button @click="incrementCount">增加计数</button>
+        </div>
+
+        <div class="children-container">
+          <child-a :count="count"></child-a>
+          <child-b></child-b>
+          <child-c></child-c>
+        </div>
+
+        <div class="info-section">
+          <h3>关键观察点</h3>
+          <p>
+            当您点击"增加计数"按钮时，父组件的 count 状态会改变。 注意观察：<strong
+              >只有 ChildA 会重新渲染</strong
+            >
+            （背景色会改变，控制台会打印日志）。
+          </p>
+          <p>
+            <strong>ChildB 和 ChildC 不会重新渲染</strong>，因为它们不依赖任何响应式数据。 这是 Vue
+            3 的精确更新机制：只有真正依赖响应式数据的组件才会更新。
+          </p>
+        </div>
+
+        <div class="instructions">
+          <h3>演示步骤</h3>
+          <p>请按照以下步骤观察 Vue 3 的精确更新行为：</p>
+          <ul>
+            <li>打开浏览器的开发者工具，切换到控制台</li>
+            <li>点击"增加计数"按钮</li>
+            <li>观察控制台只输出 ChildA 的渲染日志</li>
+            <li>观察只有 ChildA 的背景色会改变</li>
+            <li>ChildB 和 ChildC 保持不变，展示了 Vue 3 的性能优势</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const { createApp, ref, onMounted, watch } = Vue
+
+      // 生成随机颜色的函数
+      const getRandomColor = () => {
+        const colors = [
+          '#e74c3c',
+          '#3498db',
+          '#2ecc71',
+          '#f39c12',
+          '#9b59b6',
+          '#1abc9c',
+          '#34495e',
+          '#e67e22',
+          '#95a5a6',
+          '#d35400',
+          '#c0392b',
+          '#16a085',
+          '#27ae60',
+          '#2980b9',
+          '#8e44ad',
+        ]
+        return colors[Math.floor(Math.random() * colors.length)]
+      }
+
+      // 父组件
+      createApp({
+        setup() {
+          const count = ref(0)
+
+          // 初始渲染时打印日志
+          onMounted(() => {
+            console.log('App component is mounted!')
+          })
+
+          const incrementCount = () => {
+            count.value++
+            console.log('App count updated to:', count.value)
+          }
+
+          return {
+            count,
+            incrementCount,
+          }
+        },
+      })
+        .component('child-a', {
+          props: ['count'],
+          setup(props) {
+            // 使用 ref 创建响应式的背景色
+            const backgroundColor = ref(getRandomColor())
+
+            // 监听 props 变化，只有当 count 变化时才更新背景色和打印日志
+            const updateColor = () => {
+              backgroundColor.value = getRandomColor()
+              console.log('Child A is updating!')
+            }
+
+            // 初始渲染时打印日志
+            onMounted(() => {
+              console.log('Child A is mounted!')
+            })
+
+            // 监听 count 的变化
+            watch(() => props.count, updateColor)
+
+            return {
+              backgroundColor,
+            }
+          },
+          template: `
+                <div class="child" :style="{ backgroundColor }">
+                    <h3>子组件 A</h3>
+                    <p>接收 count: {{ count }}</p>
+                    <p>背景色: {{ backgroundColor }}</p>
+                </div>
+            `,
+        })
+        .component('child-b', {
+          setup() {
+            // 使用 ref 创建响应式的背景色
+            const backgroundColor = ref(getRandomColor())
+
+            // 初始渲染时打印日志
+            onMounted(() => {
+              console.log('Child B is mounted!')
+            })
+
+            return {
+              backgroundColor,
+            }
+          },
+          template: `
+                <div class="child" :style="{ backgroundColor }">
+                    <h3>子组件 B</h3>
+                    <p>不接收任何 props</p>
+                    <p>背景色: {{ backgroundColor }}</p>
+                </div>
+            `,
+        })
+        .component('child-c', {
+          setup() {
+            // 使用 ref 创建响应式的背景色
+            const backgroundColor = ref(getRandomColor())
+
+            // 初始渲染时打印日志
+            onMounted(() => {
+              console.log('Child C is mounted!')
+            })
+
+            return {
+              backgroundColor,
+            }
+          },
+          template: `
+                <div class="child" :style="{ backgroundColor }">
+                    <h3>子组件 C</h3>
+                    <p>不接收任何 props</p>
+                    <p>背景色: {{ backgroundColor }}</p>
+                </div>
+            `,
+        })
+        .mount('#app')
+    </script>
+  </body>
+</html>
