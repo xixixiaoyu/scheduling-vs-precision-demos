@@ -138,8 +138,8 @@
       }
 
       function FilterableList() {
-        // 生成 20,000 个对象的数组
-        const [allItems] = useState(() => generateLargeDataSet(20000))
+        // 生成 100,000 个对象的数组
+        const [allItems] = useState(() => generateLargeDataSet(100000))
         const [filterText, setFilterText] = useState('')
         const [filteredItems, setFilteredItems] = useState(allItems)
         const [isProcessing, setIsProcessing] = useState(false)
@@ -215,7 +215,7 @@
             <div className="comparison">
               <h3>与阻塞模式对比</h3>
               <p>
-                在之前的阻塞模式中，每次输入都会立即触发列表过滤，导致 UI 阻塞。
+                在之前的阻塞模式中，每次输入都会立即触发100,000项数据的列表过滤，导致严重的UI阻塞。
                 而在这个并发模式中，输入框的更新优先级高，列表更新的优先级低，用户体验显著提升。
                 这是 React 18 并发特性的核心优势：让应用保持响应，即使在处理大量数据时。
               </p>

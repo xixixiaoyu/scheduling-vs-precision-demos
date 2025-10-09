@@ -120,8 +120,8 @@
       }
 
       function FilterableList() {
-        // 生成 20,000 个对象的数组
-        const [allItems] = useState(() => generateLargeDataSet(20000))
+        // 生成 100,000 个对象的数组
+        const [allItems] = useState(() => generateLargeDataSet(100000))
         const [filterText, setFilterText] = useState('')
         const [filteredItems, setFilteredItems] = useState(allItems)
         const [isProcessing, setIsProcessing] = useState(false)
@@ -180,8 +180,8 @@
               <p>
                 这个演示展示了在没有并发特性时，处理大量数据会导致的性能问题。
                 当您在输入框中输入文字时，每次按键都会触发整个列表的重新过滤和渲染，
-                由于数据量很大（20,000 项），这个过程会阻塞主线程，导致输入响应明显延迟。
-                在实际应用中，这种体验会让用户感到界面卡顿。
+                由于数据量巨大（100,000 项），这个过程会严重阻塞主线程，导致输入响应明显延迟。
+                在实际应用中，这种体验会让用户感到界面严重卡顿。
               </p>
               <p>
                 <strong>尝试：</strong>快速输入文字，观察输入框的响应延迟和红色边框的出现。
