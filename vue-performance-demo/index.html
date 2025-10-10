@@ -135,7 +135,7 @@
         <div class="performance-info">
           <h3>Vue 响应式系统优势</h3>
           <p>
-            这个演示展示了 Vue 3 的响应式系统和计算属性如何高效地处理大量数据。 Vue
+            这个演示展示了 Vue 3 的响应式系统和计算属性如何高效地处理大量数据（100,000项）。 Vue
             的计算属性具有自动缓存和依赖追踪的特性，只有在依赖的数据发生变化时才会重新计算。
             这种设计使得 Vue 在大多数情况下无需类似 React 的并发特性就能保持良好的性能。
           </p>
@@ -148,7 +148,7 @@
             Vue 的响应式系统在底层已经做了优化，自动处理了更新的优先级和批处理。 而 React
             需要开发者手动使用 <code>startTransition</code> 等并发特性来优化性能。
             这体现了两种框架在设计哲学上的差异：Vue 更注重开箱即用的体验，而 React
-            提供了更底层的控制能力。
+            提供了更底层的控制能力。现在两个演示都使用相同的数据量（100,000项），可以进行公平的性能对比。
           </p>
         </div>
       </div>
@@ -175,8 +175,8 @@
 
       createApp({
         setup() {
-          // 生成 20,000 个对象的数组
-          const allItems = ref(generateLargeDataSet(20000))
+          // 生成 100,000 个对象的数组
+          const allItems = ref(generateLargeDataSet(100000))
           const filterText = ref('')
           const isProcessing = ref(false)
 
